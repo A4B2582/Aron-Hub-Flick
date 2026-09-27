@@ -1,0 +1,358 @@
+-- [[ Aron Hub - Mobile Advanced v6.1 (Universal / All Games Supported) ]] --
+
+-- Mobil Uyumlu ve Garantili UI Kütüphanesini Yükleme (Rayfield)
+local success, Rayfield = pcall(function()
+    return loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+end)
+
+if not success or not Rayfield then
+    return
+end
+
+-- Pencere Oluşturma
+local Window = Rayfield:CreateWindow({
+    Name = "Aron Hub | Flick",
+    LoadingTitle = "Aron Hub Loading...",
+    LoadingSubtitle = "by qmiracxws (All Games Supported)",
+    ConfigurationSaving = {
+        Enabled = false,
+    },
+    KeySystem = false,
+})
+
+-- Sekmeler (Tabs)
+local Tabs = {
+    Info = Window:CreateTab("Information", 4483362458),
+    Main = Window:CreateTab("Main Menu", 4483362458),
+    Player = Window:CreateTab("Player", 4483362458),
+    Settings = Window:CreateTab("Settings", 4483362458)
+}
+
+-- [[ 1. BİLGİLENDİRME (Information & Announcements) ]] --
+Tabs.Info:CreateParagraph({Title = "Creator", Content = "qmiracxws"})
+Tabs.Info:CreateParagraph({Title = "Hub Release Date", Content = "27.09.2026"})
+Tabs.Info:CreateParagraph({Title = "Hub Version", Content = "6.1 (Universal Support)"})
+Tabs.Info:CreateParagraph({Title = "Supported Games", Content = "All Roblox Games"})
+Tabs.Info:CreateParagraph({Title = "Announcement", Content = "Thanks to everyone using, This hub is meant to help you."})
+
+
+-- [[ 2. ANA MENÜ (Main Menu Features, ESP & Aimbot) ]] --
+Tabs.Main:CreateButton({
+    Name = "Reset Character",
+    Callback = function()
+        pcall(function()
+            local player = game.Players.LocalPlayer
+            if player and player.Character and player.Character:FindFirstChild('Humanoid') then
+                player.Character.Humanoid.Health = 0
+            end
+        end)
+    end,
+})
+
+local bhopEnabled = false
+Tabs.Main:CreateToggle({
+    Name = "Auto BunnyHop",
+    CurrentValue = false,
+    Flag = "BhopToggle",
+    Callback = function(Value)
+        bhopEnabled = Value
+        if bhopEnabled then
+            task.spawn(function()
+                while bhopEnabled do
+                    pcall(function()
+                        local player = game.Players.LocalPlayer
+                        if player and player.Character and player.Character:FindFirstChild('Humanoid') then
+                            player.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+                        end
+                    end)
+                    task.wait(0.1)
+                end
+            end)
+        end
+    end,
+})
+
+Tabs.Main:CreateSlider({
+    Name = "Camera Field Of View (FOV)",
+    Range = {50, 120},
+    Increment = 1,
+    CurrentValue = 70,
+    Flag = "FovSlider",
+    Callback = function(Value)
+        pcall(function()
+            local camera = workspace.CurrentCamera
+            if camera then
+                camera.FieldOfView = Value
+            end
+        end)
+    end,
+})
+
+-- Gelişmiş Duvar Arkası (Wallhack) ve Kusursuz Temizlenen ESP Sistemi
+local espRunning = false
+local storedOriginals = {}
+
+local function clearAllESP()
+    pcall(function()
+        for _, player in ipairs(game.Players:GetPlayers()) do
+            if player.Character then
+                local head = player.Character:FindFirstChild("Head")
+                if head then
+                    local tag = head:FindFirstChild("AronEspTag")
+                    if tag then tag:Destroy() end
+                end
+                local hl = player.Character:FindFirstChild("AronHighlight")
+                if hl then hl:Destroy() end
+            end
+            
+            if storedOriginals[player] then
+                if player.Character then
+                    for desc, data in pairs(storedOriginals[player].Parts) do
+                        if desc and desc.Parent then
+                            pcall(function()
+                                desc.Color = data.Color
+                                desc.Material = data.Material
+                                desc.Transparency = data.Transparency
+                            end)
+                        end
+                    end
+                    for _, item in ipairs(storedOriginals[player].RemovedItems) do
+                        if item and player.Character then
+                            pcall(function()
+                                item.Parent = player.Character
+                            end)
+                        end
+                    end
+                end
+                storedOriginals[player] = nil
+            end
+        end
+    end)
+end
+
+Tabs.Main:CreateToggle({
+    Name = "Player ESP (Name, Health, Full Red, Wallhack)",
+    CurrentValue = false,
+    Flag = "MainEspToggle",
+    Callback = function(Value)
+        espRunning = Value
+        if Value then
+            Rayfield:Notify({Title = "Aron Hub", Content = "ESP Enabled (Wallhack)", Duration = 3})
+            
+            task.spawn(function()
+                while espRunning do
+                    pcall(function()
+                        for _, player in ipairs(game.Players:GetPlayers()) do
+                            if player ~= game.Players.LocalPlayer and player.Character then
+                                local char = player.Character
+                                local humanoid = char:FindFirstChildOfClass("Humanoid")
+                                local head = char:FindFirstChild("Head")
+
+                                if humanoid and head then
+                                    if not storedOriginals[player] then
+                                        storedOriginals[player] = {
+                                            Parts = {},
+                                            RemovedItems = {},
+                                            Highlight = nil
+                                        }
+                                    end
+
+                                    -- Kıyafetleri ve aksesuarları gizleme
+                                    for _, item in ipairs(char:GetChildren()) do
+                                        if item:IsA("Clothing") or item:IsA("Accessory") or item:IsA("ShirtGraphic") then
+                                            if item.Parent then
+                                                local alreadyStored = false
+                                                for _, savedItem in ipairs(storedOriginals[player].RemovedItems) do
+                                                    if savedItem == item then alreadyStored = true break end
+                                                end
+                                                if not alreadyStored then
+                                                    table.insert(storedOriginals[player].RemovedItems, item)
+                                                end
+                                                item.Parent = nil
+                                            end
+                                        end
+                                    end
+
+                                    -- Duvar arkası Highlight
+                                    local highlight = char:FindFirstChild("AronHighlight")
+                                    if not highlight then
+                                        highlight = Instance.new("Highlight")
+                                        highlight.Name = "AronHighlight"
+                                        highlight.Adornee = char
+                                        highlight.FillColor = Color3.fromRGB(255, 0, 0)
+                                        highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+                                        highlight.FillTransparency = 0.2
+                                        highlight.OutlineTransparency = 0
+                                        highlight.Parent = char
+                                        storedOriginals[player].Highlight = highlight
+                                    end
+
+                                    -- Vücut parçalarını kırmızı yapma
+                                    for _, desc in ipairs(char:GetDescendants()) do
+                                        if desc:IsA("BasePart") or desc:IsA("MeshPart") then
+                                            if not storedOriginals[player].Parts[desc] then
+                                                storedOriginals[player].Parts[desc] = {
+                                                    Color = desc.Color,
+                                                    Material = desc.Material,
+                                                    Transparency = desc.Transparency
+                                                }
+                                            end
+                                            desc.Color = Color3.fromRGB(255, 0, 0)
+                                            desc.Material = Enum.Material.Neon
+                                            desc.Transparency = 0
+                                            if desc:IsA("MeshPart") then
+                                                desc.TextureID = ""
+                                            end
+                                        end
+                                    end
+
+                                    -- İsim ve Can Etiketi
+                                    local guiTag = head:FindFirstChild("AronEspTag")
+                                    if not guiTag then
+                                        local billboard = Instance.new("BillboardGui")
+                                        billboard.Name = "AronEspTag"
+                                        billboard.Size = UDim2.new(0, 200, 0, 50)
+                                        billboard.StudsOffset = Vector3.new(0, 2.5, 0)
+                                        billboard.AlwaysOnTop = true
+                                        billboard.Parent = head
+
+                                        local textLabel = Instance.new("TextLabel")
+                                        textLabel.Name = "EspText"
+                                        textLabel.Size = UDim2.new(1, 0, 1, 0)
+                                        textLabel.BackgroundTransparency = 1
+                                        textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+                                        textLabel.TextStrokeTransparency = 0
+                                        textLabel.TextSize = 14
+                                        textLabel.Font = Enum.Font.SourceSansBold
+                                        textLabel.Parent = billboard
+                                        
+                                        guiTag = billboard
+                                    end
+
+                                    local label = guiTag:FindFirstChild("EspText")
+                                    if label then
+                                        label.Text = player.Name .. " | Health: " .. math.floor(humanoid.Health)
+                                    end
+                                end
+                            end
+                        end
+                    end)
+                    task.wait(0.2)
+                end
+            end)
+        else
+            Rayfield:Notify({Title = "Aron Hub", Content = "ESP Disabled", Duration = 3})
+            clearAllESP()
+        end
+    end,
+})
+
+-- Aimbot Özelliği (Kapatınca Anında Durdurulan Mimari)
+local aimbotRunning = false
+Tabs.Main:CreateToggle({
+    Name = "Aimbot (Head Lock)",
+    CurrentValue = false,
+    Flag = "AimbotToggle",
+    Callback = function(Value)
+        aimbotRunning = Value
+        if Value then
+            Rayfield:Notify({Title = "Aron Hub", Content = "Aimbot Enabled", Duration = 3})
+            
+            task.spawn(function()
+                local runService = game:GetService("RunService")
+                local camera = workspace.CurrentCamera
+                local localPlayer = game.Players.LocalPlayer
+
+                while aimbotRunning do
+                    runService.RenderStepped:Wait()
+                    pcall(function()
+                        local closestPlayer = nil
+                        local shortestDistance = 150
+
+                        for _, player in ipairs(game.Players:GetPlayers()) do
+                            if player ~= localPlayer and player.Character then
+                                local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+                                local head = player.Character:FindFirstChild("Head")
+
+                                if humanoid and humanoid.Health > 0 and head then
+                                    local vector, onScreen = camera:WorldToViewportPoint(head.Position)
+                                    if onScreen then
+                                        local touchLocation = workspace.CurrentCamera.ViewportSize / 2
+                                        local distance = (Vector2.new(vector.X, vector.Y) - touchLocation).Magnitude
+
+                                        if distance < shortestDistance then
+                                            shortestDistance = distance
+                                            closestPlayer = player
+                                        end
+                                    end
+                                end
+                            end
+                        end
+
+                        if closestPlayer and closestPlayer.Character and closestPlayer.Character:FindFirstChild("Head") then
+                            local targetHead = closestPlayer.Character.Head
+                            camera.CFrame = camera.CFrame:Lerp(CFrame.new(camera.CFrame.Position, targetHead.Position), 0.2)
+                        end
+                    end)
+                end
+            end)
+        else
+            Rayfield:Notify({Title = "Aron Hub", Content = "Aimbot Disabled", Duration = 3})
+        end
+    end,
+})
+
+
+-- [[ 3. KARAKTER AYARLARI ]] --
+local speedEnabled = false
+local speedValue = 16
+
+Tabs.Player:CreateToggle({
+    Name = "Custom WalkSpeed",
+    CurrentValue = false,
+    Flag = "SpeedToggle",
+    Callback = function(Value)
+        speedEnabled = Value
+        pcall(function()
+            local char = game.Players.LocalPlayer.Character
+            if char and char:FindFirstChild('Humanoid') then
+                char.Humanoid.WalkSpeed = speedEnabled and speedValue or 16
+            end
+        end)
+    end,
+})
+
+Tabs.Player:CreateSlider({
+    Name = "Speed Value",
+    Range = {16, 150},
+    Increment = 1,
+    CurrentValue = 16,
+    Flag = "WalkSpeedSlider",
+    Callback = function(Value)
+        speedValue = Value
+        pcall(function()
+            if speedEnabled then
+                local char = game.Players.LocalPlayer.Character
+                if char and char:FindFirstChild('Humanoid') then
+                    char.Humanoid.WalkSpeed = speedValue
+                end
+            end
+        end)
+    end,
+})
+
+
+-- [[ 4. AYARLAR VE KONFİGÜRASYON (System Management) ]] --
+Tabs.Settings:CreateButton({
+    Name = "Destroy Hub",
+    Callback = function()
+        clearAllESP()
+        Rayfield:Destroy()
+    end,
+})
+
+Rayfield:Notify({
+    Title = "Aron Hub",
+    Content = "Successfully Loaded (Aron Hub | Flick v6.1)!",
+    Duration = 5
+})
